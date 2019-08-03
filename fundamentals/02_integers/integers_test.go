@@ -2,7 +2,7 @@ package integers_test
 
 import (
 	"fmt"
-	"github.com/valdemarceccon/golang-tdd-study/fundamentals/integers"
+	"github.com/valdemarceccon/golang-tdd-study/fundamentals/02_integers"
 	"testing"
 )
 

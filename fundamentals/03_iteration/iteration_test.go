@@ -1,7 +1,7 @@
 package iteration_test
 
 import (
-	"github.com/valdemarceccon/golang-tdd-study/fundamentals/iteration"
+	"github.com/valdemarceccon/golang-tdd-study/fundamentals/03_iteration"
 	"testing"
 )
 
