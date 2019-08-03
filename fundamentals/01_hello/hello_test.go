@@ -1,7 +1,7 @@
 package hello_test
 
 import (
-	"github.com/valdemarceccon/golang-tdd-study/fundamentals/hello"
+	"github.com/valdemarceccon/golang-tdd-study/fundamentals/01_hello"
 	"testing"
 )
 
@@ -14,7 +14,7 @@ func TestHello(t *testing.T) {
 		}
 	}
 
-	t.Run("saying hello to people", func(t *testing.T) {
+	t.Run("saying 01_hello to people", func(t *testing.T) {
 		got := hello.Hello("Valdemar", "")
 		want := "Hello, Valdemar"
 

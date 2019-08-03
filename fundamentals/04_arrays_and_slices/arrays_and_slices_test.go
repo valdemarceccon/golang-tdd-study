@@ -1,7 +1,7 @@
 package arrays_and_slices_test
 
 import (
-	"github.com/valdemarceccon/golang-tdd-study/fundamentals/arrays_and_slices"
+	"github.com/valdemarceccon/golang-tdd-study/fundamentals/04_arrays_and_slices"
 	"reflect"
 	"testing"
 )
