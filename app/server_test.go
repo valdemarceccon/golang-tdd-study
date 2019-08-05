@@ -49,6 +49,45 @@ func TestGETPlayers(t *testing.T) {
 	})
 }
 
+func TestStoreWins(t *testing.T) {
+	store := app.StubPlayerStore{Scores: map[string]int{}, WinCalls: nil}
+	server := &app.PlayerServer{PlayerStore: &store}
+
+	t.Run("it records wins when POST", func(t *testing.T) {
+		player := "Pepper"
+		request := newPostWinRequest(player)
+		response := httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		assertStatus(t, response.Code, http.StatusAccepted)
+
+		if len(store.WinCalls) != 1 {
+			t.Fatalf("got %d calls to RecordWin want %d", len(store.WinCalls), 1)
+		}
+
+		if store.WinCalls[0] != player {
+			t.Errorf("did not store correct winner got %q want %q", store.WinCalls[0], player)
+		}
+	})
+}
+
+func TestRecordingWinsAndRetrievingThem(t *testing.T) {
+	store := app.NewInMemoryPlayerStore()
+	server := app.PlayerServer{PlayerStore: store}
+	player := "Pepper"
+
+	server.ServeHTTP(httptest.NewRecorder(), newPostWinRequest(player))
+	server.ServeHTTP(httptest.NewRecorder(), newPostWinRequest(player))
+	server.ServeHTTP(httptest.NewRecorder(), newPostWinRequest(player))
+
+	response := httptest.NewRecorder()
+	server.ServeHTTP(response, newGetScoreRequest(player))
+	assertStatus(t, response.Code, http.StatusOK)
+
+	assertResponseBody(t, response.Body.String(), "3")
+}
+
 func assertStatus(t *testing.T, got, want int) {
 	t.Helper()
 	if got != want {
@@ -58,6 +97,11 @@ func assertStatus(t *testing.T, got, want int) {
 
 func newGetScoreRequest(name string) *http.Request {
 	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/players/%s", name), nil)
+	return req
+}
+
+func newPostWinRequest(name string) *http.Request {
+	req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("/players/%s", name), nil)
 	return req
 }
 
