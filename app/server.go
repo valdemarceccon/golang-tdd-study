@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -8,18 +9,35 @@ import (
 type PlayerStore interface {
 	GetPlayerScore(name string) int
 	RecordWin(name string)
+	GetLeague() []Player
 }
 
 type PlayerServer struct {
-	PlayerStore
+	Store PlayerStore
+	http.Handler
 }
 
 type StubPlayerStore struct {
 	Scores   map[string]int
 	WinCalls []string
+	League   []Player
 }
 
-func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *StubPlayerStore) GetLeague() []Player {
+	return s.League
+}
+
+type Player struct {
+	Name string
+	Wins int
+}
+
+func (p *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-type", "application/json")
+	_ = json.NewEncoder(w).Encode(p.Store.GetLeague())
+}
+
+func (p *PlayerServer) playersHandler(w http.ResponseWriter, r *http.Request) {
 	player := r.URL.Path[len("/players/"):]
 	switch r.Method {
 	case http.MethodPost:
@@ -27,7 +45,6 @@ func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		p.showScore(w, player)
 	}
-
 }
 
 func NewInMemoryPlayerStore() *InMemoryPlayerStore {
@@ -38,6 +55,13 @@ type InMemoryPlayerStore struct {
 	store map[string]int
 }
 
+func (i *InMemoryPlayerStore) GetLeague() (league []Player) {
+	for name, wins := range i.store {
+		league = append(league, Player{Name: name, Wins: wins})
+	}
+	return
+}
+
 func (i *InMemoryPlayerStore) RecordWin(name string) {
 	i.store[name]++
 }
@@ -46,13 +70,27 @@ func (i *InMemoryPlayerStore) GetPlayerScore(name string) int {
 	return i.store[name]
 }
 
+func NewPlayerServer(store PlayerStore) (p *PlayerServer) {
+	p = new(PlayerServer)
+
+	p.Store = store
+
+	router := http.NewServeMux()
+	router.Handle("/league", http.HandlerFunc(p.leagueHandler))
+	router.Handle("/players/", http.HandlerFunc(p.playersHandler))
+
+	p.Handler = router
+
+	return
+}
+
 func (p *PlayerServer) processWin(writer http.ResponseWriter, player string) {
-	p.PlayerStore.RecordWin(player)
+	p.Store.RecordWin(player)
 	writer.WriteHeader(http.StatusAccepted)
 }
 
 func (p *PlayerServer) showScore(writer http.ResponseWriter, player string) {
-	score := p.PlayerStore.GetPlayerScore(player)
+	score := p.Store.GetPlayerScore(player)
 
 	if score == 0 {
 		writer.WriteHeader(http.StatusNotFound)
