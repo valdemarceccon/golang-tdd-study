@@ -9,7 +9,7 @@ import (
 type PlayerStore interface {
 	GetPlayerScore(name string) int
 	RecordWin(name string)
-	GetLeague() []Player
+	GetLeague() League
 }
 
 type PlayerServer struct {
@@ -20,10 +20,10 @@ type PlayerServer struct {
 type StubPlayerStore struct {
 	Scores   map[string]int
 	WinCalls []string
-	League   []Player
+	League   League
 }
 
-func (s *StubPlayerStore) GetLeague() []Player {
+func (s *StubPlayerStore) GetLeague() League {
 	return s.League
 }
 
