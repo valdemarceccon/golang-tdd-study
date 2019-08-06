@@ -203,13 +203,13 @@ func TestFileSystemStore(t *testing.T) {
 
 }
 
-func createTempFile(t *testing.T, initialData string) (io.ReadWriteSeeker, func()) {
+func createTempFile(t *testing.T, initialData string) (*os.File, func()) {
 	t.Helper()
 
 	tmpfile, err := ioutil.TempFile("", "db")
 
 	if err != nil {
-		t.Fatalf("could not create temp file %v", err)
+		t.Fatalf("could not create temp File %v", err)
 	}
 
 	_, _ = tmpfile.Write([]byte(initialData))
