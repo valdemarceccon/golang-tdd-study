@@ -13,6 +13,8 @@ import (
 	"testing"
 )
 
+const jsonContentType = "application/json"
+
 func TestGETPlayers(t *testing.T) {
 	store := &poker.StubPlayerStore{
 		Scores: map[string]int{
@@ -67,14 +69,20 @@ func TestStoreWins(t *testing.T) {
 
 		assertStatus(t, response.Code, http.StatusAccepted)
 
-		if len(store.WinCalls) != 1 {
-			t.Fatalf("got %d calls to RecordWin want %d", len(store.WinCalls), 1)
-		}
-
-		if store.WinCalls[0] != player {
-			t.Errorf("did not store correct winner got %q want %q", store.WinCalls[0], player)
-		}
+		assertPlayerWin(t, store, player)
 	})
+}
+
+func assertPlayerWin(t *testing.T, store *poker.StubPlayerStore, winner string) {
+	t.Helper()
+
+	if len(store.WinCalls) != 1 {
+		t.Fatalf("got %d calls to RecordWin want %d", len(store.WinCalls), 1)
+	}
+
+	if store.WinCalls[0] != winner {
+		t.Errorf("did not store correct winner got %q want %q", store.WinCalls[0], winner)
+	}
 }
 
 func TestRecordingWinsAndRetrievingThem(t *testing.T) {
@@ -166,8 +174,6 @@ func newLeagueRequest() (r *http.Request) {
 	r, _ = http.NewRequest(http.MethodGet, "/league", nil)
 	return r
 }
-
-const jsonContentType = "application/json"
 
 func assertContentType(t *testing.T, response *httptest.ResponseRecorder, want string) {
 	t.Helper()

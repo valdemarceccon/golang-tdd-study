@@ -1,6 +1,8 @@
 package cli
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func main() {
 	fmt.Println("Let's play poker")
