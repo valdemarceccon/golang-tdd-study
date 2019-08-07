@@ -2,6 +2,7 @@ package poker_test
 
 import (
 	poker "github.com/valdemarceccon/golang-tdd-study/app_poker"
+	"github.com/valdemarceccon/golang-tdd-study/app_poker/player"
 	"testing"
 )
 
@@ -16,7 +17,7 @@ func TestFileSystemStore(t *testing.T) {
 
 		assertNotError(t, err)
 
-		want := []poker.Player{
+		want := []player.Player{
 			{Name: "Chris", Wins: 33},
 			{Name: "Cleo", Wins: 10},
 		}
@@ -98,7 +99,7 @@ func TestFileSystemStore(t *testing.T) {
 
 		got := store.GetLeague()
 
-		want := []poker.Player{
+		want := []player.Player{
 			{"Chris", 33},
 			{"Cleo", 10},
 		}
