@@ -3,38 +3,18 @@ package poker
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/valdemarceccon/golang-tdd-study/app_poker/player"
 	"net/http"
 )
 
-type PlayerStore interface {
-	GetPlayerScore(name string) int
-	RecordWin(name string)
-	GetLeague() League
-}
-
 type PlayerServer struct {
-	Store PlayerStore
+	store player.PlayerStore
 	http.Handler
-}
-
-type StubPlayerStore struct {
-	Scores   map[string]int
-	WinCalls []string
-	League   League
-}
-
-func (s *StubPlayerStore) GetLeague() League {
-	return s.League
-}
-
-type Player struct {
-	Name string
-	Wins int
 }
 
 func (p *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
-	_ = json.NewEncoder(w).Encode(p.Store.GetLeague())
+	_ = json.NewEncoder(w).Encode(p.store.GetLeague())
 }
 
 func (p *PlayerServer) playersHandler(w http.ResponseWriter, r *http.Request) {
@@ -47,10 +27,10 @@ func (p *PlayerServer) playersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func NewPlayerServer(store PlayerStore) (p *PlayerServer) {
+func NewPlayerServer(store player.PlayerStore) (p *PlayerServer) {
 	p = new(PlayerServer)
 
-	p.Store = store
+	p.store = store
 
 	router := http.NewServeMux()
 	router.Handle("/league", http.HandlerFunc(p.leagueHandler))
@@ -62,25 +42,16 @@ func NewPlayerServer(store PlayerStore) (p *PlayerServer) {
 }
 
 func (p *PlayerServer) processWin(writer http.ResponseWriter, player string) {
-	p.Store.RecordWin(player)
+	p.store.RecordWin(player)
 	writer.WriteHeader(http.StatusAccepted)
 }
 
 func (p *PlayerServer) showScore(writer http.ResponseWriter, player string) {
-	score := p.Store.GetPlayerScore(player)
+	score := p.store.GetPlayerScore(player)
 
 	if score == 0 {
 		writer.WriteHeader(http.StatusNotFound)
 	}
 
 	_, _ = fmt.Fprint(writer, score)
-}
-
-func (s *StubPlayerStore) GetPlayerScore(name string) (score int) {
-	score = s.Scores[name]
-	return
-}
-
-func (s *StubPlayerStore) RecordWin(name string) {
-	s.WinCalls = append(s.WinCalls, name)
 }

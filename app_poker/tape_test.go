@@ -2,12 +2,13 @@ package poker_test
 
 import (
 	"github.com/valdemarceccon/golang-tdd-study/app_poker"
+	"github.com/valdemarceccon/golang-tdd-study/app_poker/pokertesting"
 	"io/ioutil"
 	"testing"
 )
 
 func TestTape_Write(t *testing.T) {
-	file, clean := createTempFile(t, "12345")
+	file, clean := pokertesting.CreateTempFile(t, "12345")
 	defer clean()
 
 	tape := &poker.Tape{File: file}

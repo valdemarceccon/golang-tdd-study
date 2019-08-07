@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/valdemarceccon/golang-tdd-study/app_poker/player"
 	"io"
 	"os"
 	"sort"
 )
 
 type FileSystemPlayerStore struct {
-	Database io.Writer
-	league   League
+	database io.Writer
+	league   player.League
 }
 
 func NewFileSystemPlayerStore(database *os.File) (*FileSystemPlayerStore, error) {
@@ -21,14 +22,14 @@ func NewFileSystemPlayerStore(database *os.File) (*FileSystemPlayerStore, error)
 		return nil, fmt.Errorf("problem initialising player db file, %v", err)
 	}
 
-	league, err := NewLeague(database)
+	league, err := player.NewLeague(database)
 
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("problem loading player store from file %s, %v", database.Name(), err))
 	}
 
 	return &FileSystemPlayerStore{
-		Database: &Tape{File: database},
+		database: &Tape{File: database},
 		league:   league,
 	}, nil
 }
@@ -50,7 +51,7 @@ func initializePlayerDBFile(file *os.File) error {
 	return nil
 }
 
-func (f *FileSystemPlayerStore) GetLeague() League {
+func (f *FileSystemPlayerStore) GetLeague() player.League {
 	sort.Slice(f.league, func(i, j int) bool {
 		return f.league[i].Wins > f.league[j].Wins
 	})
@@ -58,21 +59,21 @@ func (f *FileSystemPlayerStore) GetLeague() League {
 }
 
 func (f *FileSystemPlayerStore) GetPlayerScore(name string) int {
-	player := f.league.Find(name)
-	if player != nil {
-		return player.Wins
+	somePlayer := f.league.Find(name)
+	if somePlayer != nil {
+		return somePlayer.Wins
 	}
 	return 0
 }
 
 func (f *FileSystemPlayerStore) RecordWin(name string) {
-	player := f.league.Find(name)
+	somePlayer := f.league.Find(name)
 
-	if player != nil {
-		player.Wins++
+	if somePlayer != nil {
+		somePlayer.Wins++
 	} else {
-		f.league = append(f.league, Player{Name: name, Wins: 1})
+		f.league = append(f.league, player.Player{Name: name, Wins: 1})
 	}
 
-	_ = json.NewEncoder(f.Database).Encode(f.league)
+	_ = json.NewEncoder(f.database).Encode(f.league)
 }

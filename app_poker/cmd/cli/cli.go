@@ -2,13 +2,13 @@ package cli
 
 import (
 	"bufio"
-	poker "github.com/valdemarceccon/golang-tdd-study/app_poker"
+	"github.com/valdemarceccon/golang-tdd-study/app_poker/player"
 	"io"
 	"strings"
 )
 
 type CLI struct {
-	playerStore poker.PlayerStore
+	playerStore player.PlayerStore
 	in          *bufio.Scanner
 }
 
@@ -26,7 +26,7 @@ func (cli *CLI) readLine() string {
 	return cli.in.Text()
 }
 
-func NewCLI(store poker.PlayerStore, in io.Reader) *CLI {
+func NewCLI(store player.PlayerStore, in io.Reader) *CLI {
 	return &CLI{
 		playerStore: store,
 		in:          bufio.NewScanner(in),
