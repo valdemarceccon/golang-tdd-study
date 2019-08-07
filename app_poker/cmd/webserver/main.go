@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/valdemarceccon/golang-tdd-study/app"
+	"github.com/valdemarceccon/golang-tdd-study/app_poker"
 	"log"
 	"net/http"
 	"os"
@@ -17,9 +17,14 @@ func main() {
 		log.Fatalf("problem opening %s %v", dbFilename, err)
 	}
 
-	store := &app.FileSystemPlayerStore{Database: db}
+	store, err := poker.NewFileSystemPlayerStore(db)
 
-	server := app.NewPlayerServer(store)
+	if err != nil {
+		log.Fatalf("problem create file system player store %v", err)
+	}
+
+	server := poker.NewPlayerServer(store)
+
 	if err := http.ListenAndServe(":5000", server); err != nil {
 		log.Fatalf("could not listen on port 5000 %v", err)
 	}
