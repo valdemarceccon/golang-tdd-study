@@ -5,14 +5,21 @@ import (
 	"github.com/valdemarceccon/golang-tdd-study/app_poker/player"
 	"io"
 	"strings"
+	"time"
 )
+
+type BlindAlerter interface {
+	ScheduleAlertAt(duration time.Duration, amount int)
+}
 
 type CLI struct {
 	playerStore player.PlayerStore
 	in          *bufio.Scanner
+	alerter     BlindAlerter
 }
 
 func (cli *CLI) PlayPoker() {
+	cli.alerter.ScheduleAlertAt(5*time.Second, 100)
 	userInput := cli.readLine()
 	cli.playerStore.RecordWin(extractWinner(userInput))
 }
@@ -26,9 +33,10 @@ func (cli *CLI) readLine() string {
 	return cli.in.Text()
 }
 
-func NewCLI(store player.PlayerStore, in io.Reader) *CLI {
+func NewCLI(store player.PlayerStore, in io.Reader, alerter BlindAlerter) *CLI {
 	return &CLI{
 		playerStore: store,
 		in:          bufio.NewScanner(in),
+		alerter:     alerter,
 	}
 }
