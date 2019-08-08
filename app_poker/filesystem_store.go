@@ -11,7 +11,7 @@ import (
 )
 
 type FileSystemPlayerStore struct {
-	Database io.Writer
+	database io.Writer
 	league   player.League
 }
 
@@ -29,9 +29,29 @@ func NewFileSystemPlayerStore(database *os.File) (*FileSystemPlayerStore, error)
 	}
 
 	return &FileSystemPlayerStore{
-		Database: &Tape{File: database},
+		database: &Tape{File: database},
 		league:   league,
 	}, nil
+}
+
+func FileSystemPlayerStoreFromFile(path string) (*FileSystemPlayerStore, func(), error) {
+	db, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("problem opening %s %v", path, err)
+	}
+
+	closeFunc := func() {
+		db.Close()
+	}
+
+	store, err := NewFileSystemPlayerStore(db)
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("problem creating file system player store, %v", err)
+	}
+
+	return store, closeFunc, nil
 }
 
 func initializePlayerDBFile(file *os.File) error {
@@ -75,5 +95,5 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 		f.league = append(f.league, player.Player{Name: name, Wins: 1})
 	}
 
-	_ = json.NewEncoder(f.Database).Encode(f.league)
+	_ = json.NewEncoder(f.database).Encode(f.league)
 }

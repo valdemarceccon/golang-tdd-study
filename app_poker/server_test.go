@@ -3,6 +3,7 @@ package poker_test
 import (
 	"github.com/valdemarceccon/golang-tdd-study/app_poker"
 	"github.com/valdemarceccon/golang-tdd-study/app_poker/player"
+	"github.com/valdemarceccon/golang-tdd-study/app_poker/pokertesting"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,8 +25,8 @@ func TestGETPlayers(t *testing.T) {
 
 		server.ServeHTTP(response, request)
 
-		assertStatus(t, response.Code, http.StatusOK)
-		assertResponseBody(t, response.Body.String(), "20")
+		pokertesting.AssertStatus(t, response.Code, http.StatusOK)
+		pokertesting.AssertResponseBody(t, response.Body.String(), "20")
 	})
 	t.Run("returns Floyd's score", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/players/Floyd", nil)
@@ -33,11 +34,11 @@ func TestGETPlayers(t *testing.T) {
 
 		server.ServeHTTP(response, request)
 
-		assertStatus(t, response.Code, http.StatusOK)
-		assertResponseBody(t, response.Body.String(), "10")
+		pokertesting.AssertStatus(t, response.Code, http.StatusOK)
+		pokertesting.AssertResponseBody(t, response.Body.String(), "10")
 	})
 	t.Run("return 404 on missing players", func(t *testing.T) {
-		request := newGetScoreRequest("Apollo")
+		request := pokertesting.NewGetScoreRequest("Apollo")
 		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
@@ -57,51 +58,51 @@ func TestStoreWins(t *testing.T) {
 
 	t.Run("it records wins when POST", func(t *testing.T) {
 		somePlayer := "Pepper"
-		request := newPostWinRequest(somePlayer)
+		request := pokertesting.NewPostWinRequest(somePlayer)
 		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
 
-		assertStatus(t, response.Code, http.StatusAccepted)
+		pokertesting.AssertStatus(t, response.Code, http.StatusAccepted)
 
-		assertPlayerWin(t, store, somePlayer)
+		pokertesting.AssertPlayerWin(t, store, somePlayer)
 	})
 }
 
 func TestRecordingWinsAndRetrievingThem(t *testing.T) {
-	database, cleanDatabase := createTempFile(t, "[]")
+	database, cleanDatabase := pokertesting.CreateTempFile(t, "[]")
 	defer cleanDatabase()
 	store, err := poker.NewFileSystemPlayerStore(database)
 
-	assertNotError(t, err)
+	pokertesting.AssertNotError(t, err)
 
 	server := poker.NewPlayerServer(store)
 	somePlayer := "Pepper"
 
-	server.ServeHTTP(httptest.NewRecorder(), newPostWinRequest(somePlayer))
-	server.ServeHTTP(httptest.NewRecorder(), newPostWinRequest(somePlayer))
-	server.ServeHTTP(httptest.NewRecorder(), newPostWinRequest(somePlayer))
+	server.ServeHTTP(httptest.NewRecorder(), pokertesting.NewPostWinRequest(somePlayer))
+	server.ServeHTTP(httptest.NewRecorder(), pokertesting.NewPostWinRequest(somePlayer))
+	server.ServeHTTP(httptest.NewRecorder(), pokertesting.NewPostWinRequest(somePlayer))
 
 	t.Run("get score", func(t *testing.T) {
 		response := httptest.NewRecorder()
-		server.ServeHTTP(response, newGetScoreRequest(somePlayer))
-		assertStatus(t, response.Code, http.StatusOK)
+		server.ServeHTTP(response, pokertesting.NewGetScoreRequest(somePlayer))
+		pokertesting.AssertStatus(t, response.Code, http.StatusOK)
 
-		assertResponseBody(t, response.Body.String(), "3")
+		pokertesting.AssertResponseBody(t, response.Body.String(), "3")
 	})
 
 	t.Run("get league", func(t *testing.T) {
 		response := httptest.NewRecorder()
-		server.ServeHTTP(response, newLeagueRequest())
-		assertStatus(t, response.Code, http.StatusOK)
+		server.ServeHTTP(response, pokertesting.NewLeagueRequest())
+		pokertesting.AssertStatus(t, response.Code, http.StatusOK)
 
-		got := getLeagueFromResponse(t, response.Body)
+		got := pokertesting.GetLeagueFromResponse(t, response.Body)
 
 		want := []player.Player{
 			{Name: "Pepper", Wins: 3},
 		}
 
-		assertLeague(t, got, want)
+		pokertesting.AssertLeague(t, got, want)
 	})
 }
 
@@ -116,14 +117,14 @@ func TestLeague(t *testing.T) {
 		store := &player.StubPlayerStore{League: wantedLeague}
 		server := poker.NewPlayerServer(store)
 
-		request := newLeagueRequest()
+		request := pokertesting.NewLeagueRequest()
 		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
 
-		got := getLeagueFromResponse(t, response.Body)
-		assertStatus(t, response.Code, http.StatusOK)
-		assertLeague(t, got, wantedLeague)
-		assertContentType(t, response, jsonContentType)
+		got := pokertesting.GetLeagueFromResponse(t, response.Body)
+		pokertesting.AssertStatus(t, response.Code, http.StatusOK)
+		pokertesting.AssertLeague(t, got, wantedLeague)
+		pokertesting.AssertContentType(t, response, jsonContentType)
 	})
 }

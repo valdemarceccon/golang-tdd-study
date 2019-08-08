@@ -4,24 +4,19 @@ import (
 	"github.com/valdemarceccon/golang-tdd-study/app_poker"
 	"log"
 	"net/http"
-	"os"
 )
 
 const dbFilename = "game.db.json"
 
 func main() {
 
-	db, err := os.OpenFile(dbFilename, os.O_RDWR|os.O_CREATE, 0666)
+	store, closeDB, err := poker.FileSystemPlayerStoreFromFile(dbFilename)
 
 	if err != nil {
 		log.Fatalf("problem opening %s %v", dbFilename, err)
 	}
 
-	store, err := poker.NewFileSystemPlayerStore(db)
-
-	if err != nil {
-		log.Fatalf("problem create file system player store %v", err)
-	}
+	defer closeDB()
 
 	server := poker.NewPlayerServer(store)
 
