@@ -2,31 +2,25 @@ package cli
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/valdemarceccon/golang-tdd-study/app_poker/player"
 	"io"
 	"strings"
 	"time"
 )
 
-type BlindAlerter interface {
-	ScheduleAlertAt(duration time.Duration, amount int)
-}
-
 type CLI struct {
 	playerStore player.PlayerStore
 	in          *bufio.Scanner
+	out         io.Writer
 	alerter     BlindAlerter
 }
 
+const PlayerPrompt = "Please enter the number of players: "
+
 func (cli *CLI) PlayPoker() {
-	blinds := []int{100, 200, 300, 400, 500, 600, 800, 1000, 2000, 4000, 8000}
-	blindTime := 0 * time.Second
-
-	for _, blind := range blinds {
-		cli.alerter.ScheduleAlertAt(blindTime, blind)
-		blindTime = blindTime + 10*time.Minute
-	}
-
+	fmt.Fprint(cli.out, PlayerPrompt)
+	cli.scheduleBlindsAlerts()
 	userInput := cli.readLine()
 	cli.playerStore.RecordWin(extractWinner(userInput))
 }
@@ -40,10 +34,21 @@ func (cli *CLI) readLine() string {
 	return cli.in.Text()
 }
 
-func NewCLI(store player.PlayerStore, in io.Reader, alerter BlindAlerter) *CLI {
+func (cli *CLI) scheduleBlindsAlerts() {
+	blinds := []int{100, 200, 300, 400, 500, 600, 800, 1000, 2000, 4000, 8000}
+	blindTime := 0 * time.Second
+
+	for _, blind := range blinds {
+		cli.alerter.ScheduleAlertAt(blindTime, blind)
+		blindTime = blindTime + 10*time.Minute
+	}
+}
+
+func NewCLI(store player.PlayerStore, in io.Reader, out io.Writer, alerter BlindAlerter) *CLI {
 	return &CLI{
 		playerStore: store,
 		in:          bufio.NewScanner(in),
+		out:         out,
 		alerter:     alerter,
 	}
 }
