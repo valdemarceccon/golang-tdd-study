@@ -30,51 +30,56 @@ func (s *SpyBlindAlerter) ScheduleAlertAt(duration time.Duration, amount int) {
 
 func TestCLI(t *testing.T) {
 	var dummySpyAlerter = &SpyBlindAlerter{}
-	var dummyBlindAlerter = &SpyBlindAlerter{}
 	var dummyPlayerStore = &player.StubPlayerStore{}
-	var dummyStdIn = &bytes.Buffer{}
 	var dummyStdOut = &bytes.Buffer{}
 
 	t.Run("record chris win from user input", func(t *testing.T) {
-		in := strings.NewReader("Chris wins\n")
+		in := strings.NewReader("3\nChris wins\n")
 		playerStore := &player.StubPlayerStore{}
 
-		cli := cli2.NewCLI(playerStore, in, dummyStdOut, dummySpyAlerter)
+		game := cli2.NewGame(dummySpyAlerter, playerStore)
+
+		cli := cli2.NewCLI(in, dummyStdOut, game)
 		cli.PlayPoker()
 
 		pokertesting.AssertPlayerWin(t, playerStore, "Chris")
 	})
 
 	t.Run("record cleo win from user input", func(t *testing.T) {
-		in := strings.NewReader("Cleo wins\n")
+		in := strings.NewReader("3\nCleo wins\n")
 		playerStore := &player.StubPlayerStore{}
 
-		cli := cli2.NewCLI(playerStore, in, dummyStdOut, dummySpyAlerter)
+		game := cli2.NewGame(dummySpyAlerter, playerStore)
+
+		cli := cli2.NewCLI(in, dummyStdOut, game)
 		cli.PlayPoker()
 
 		pokertesting.AssertPlayerWin(t, playerStore, "Cleo")
 	})
 
 	t.Run("it schedules printing of blind values", func(t *testing.T) {
-		in := strings.NewReader("Chris wins\n")
+		numOfPlayers := 4
+		in := strings.NewReader(fmt.Sprintf("%d\nChris wins\n", numOfPlayers))
 		playerStore := &player.StubPlayerStore{}
 		blindAlerter := &SpyBlindAlerter{}
+		game := cli2.NewGame(blindAlerter, playerStore)
 
-		cli := cli2.NewCLI(playerStore, in, dummyStdOut, blindAlerter)
+		cli := cli2.NewCLI(in, dummyStdOut, game)
+
 		cli.PlayPoker()
 
 		cases := []scheduledAlert{
-			{0 * time.Second, 100},
-			{10 * time.Minute, 200},
-			{20 * time.Minute, 300},
-			{30 * time.Minute, 400},
-			{40 * time.Minute, 500},
-			{50 * time.Minute, 600},
-			{60 * time.Minute, 800},
-			{70 * time.Minute, 1000},
-			{80 * time.Minute, 2000},
-			{90 * time.Minute, 4000},
-			{100 * time.Minute, 8000},
+			{time.Duration(5*numOfPlayers*0) * time.Second, 100},
+			{time.Duration(5*numOfPlayers*1) * time.Minute, 200},
+			{time.Duration(5*numOfPlayers*2) * time.Minute, 300},
+			{time.Duration(5*numOfPlayers*3) * time.Minute, 400},
+			{time.Duration(5*numOfPlayers*4) * time.Minute, 500},
+			{time.Duration(5*numOfPlayers*5) * time.Minute, 600},
+			{time.Duration(5*numOfPlayers*6) * time.Minute, 800},
+			{time.Duration(5*numOfPlayers*7) * time.Minute, 1000},
+			{time.Duration(5*numOfPlayers*8) * time.Minute, 2000},
+			{time.Duration(5*numOfPlayers*9) * time.Minute, 4000},
+			{time.Duration(5*numOfPlayers*10) * time.Minute, 8000},
 		}
 
 		for i, want := range cases {
@@ -92,8 +97,14 @@ func TestCLI(t *testing.T) {
 	})
 
 	t.Run("it prompts the user to enter the number of players", func(t *testing.T) {
+		numberOfPlayers := 3
 		stdout := &bytes.Buffer{}
-		cli := cli2.NewCLI(dummyPlayerStore, dummyStdIn, stdout, dummyBlindAlerter)
+		in := strings.NewReader(fmt.Sprintf("%d\nCarlos wins\n", numberOfPlayers))
+		blindAlerter := &SpyBlindAlerter{}
+		game := cli2.NewGame(blindAlerter, dummyPlayerStore)
+
+		cli := cli2.NewCLI(in, stdout, game)
+
 		cli.PlayPoker()
 
 		got := stdout.String()
@@ -101,6 +112,24 @@ func TestCLI(t *testing.T) {
 
 		if got != want {
 			t.Errorf("got %q want %q", got, want)
+		}
+
+		cases := []scheduledAlert{
+			{time.Duration(0*5*numberOfPlayers) * time.Second, 100},
+			{time.Duration(1*5*numberOfPlayers) * time.Minute, 200},
+			{time.Duration(2*5*numberOfPlayers) * time.Minute, 300},
+			{time.Duration(3*5*numberOfPlayers) * time.Minute, 400},
+		}
+
+		for i, want := range cases {
+			t.Run(fmt.Sprint(want), func(t *testing.T) {
+				if len(blindAlerter.alerts) <= i {
+					t.Fatalf("alerts %d was not scheduled for %v", i, blindAlerter.alerts)
+				}
+
+				got := blindAlerter.alerts[i]
+				assertScheduledAlert(t, got, want)
+			})
 		}
 	})
 }
