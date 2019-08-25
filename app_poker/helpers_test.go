@@ -79,10 +79,10 @@ func getLeagueFromResponse(t *testing.T, body io.Reader) (league []player.Player
 	return
 }
 
-func assertStatus(t *testing.T, got, want int) {
+func assertStatus(t *testing.T, got *httptest.ResponseRecorder, want int) {
 	t.Helper()
-	if got != want {
-		t.Errorf("did not get correct status, got %d, want %d", got, want)
+	if got.Code != want {
+		t.Errorf("did not get correct status, got %d, want %d", got.Code, want)
 	}
 }
 

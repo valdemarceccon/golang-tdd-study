@@ -1,9 +1,9 @@
-package cli_test
+package poker_test
 
 import (
 	"bytes"
 	"fmt"
-	cli2 "github.com/valdemarceccon/golang-tdd-study/app_poker/cmd/cli"
+	poker "github.com/valdemarceccon/golang-tdd-study/app_poker"
 	"github.com/valdemarceccon/golang-tdd-study/app_poker/player"
 	"io"
 	"strings"
@@ -31,17 +31,17 @@ type GameSpy struct {
 	FinishCalled bool
 }
 
-func (g *GameSpy) Start(numberOfPlayers int) {
-	g.StartCalled = true
+func (g *GameSpy) Start(numberOfPlayers int, alertsDestination io.Writer) {
 	g.StartedWith = numberOfPlayers
+	g.StartCalled = true
 }
 
 func (g *GameSpy) Finish(winner string) {
-	g.FinishCalled = true
 	g.FinishedWith = winner
+	g.FinishCalled = true
 }
 
-func (s *SpyBlindAlerter) ScheduleAlertAt(duration time.Duration, amount int) {
+func (s *SpyBlindAlerter) ScheduleAlertAt(duration time.Duration, amount int, to io.Writer) {
 	s.alerts = append(s.alerts, scheduledAlert{scheduledAt: duration, amount: amount})
 }
 
@@ -55,25 +55,25 @@ var dummyStdIn = &bytes.Buffer{}
 var dummyStdOut = &bytes.Buffer{}
 
 func TestCLI(t *testing.T) {
-	t.Run("start game with 3 players and finish game with 'Chris' as winner", func(t *testing.T) {
+	t.Run("start playGame with 3 players and finish playGame with 'Chris' as winner", func(t *testing.T) {
 		game := &GameSpy{}
 		stdout := &bytes.Buffer{}
 
 		in := userSends("3", "Chris wins")
-		cli := cli2.NewCLI(in, stdout, game)
+		cli := poker.NewCLI(in, stdout, game)
 
 		cli.PlayPoker()
 
-		assertMessagesSentToUser(t, stdout, cli2.PlayerPrompt)
+		assertMessagesSentToUser(t, stdout, poker.PlayerPrompt)
 		assertGameStartedWith(t, game, 3)
 		assertFinishCalledWith(t, game, "Chris")
 	})
 
-	t.Run("start game with 8 players and record 'Cleo' as winner", func(t *testing.T) {
+	t.Run("start playGame with 8 players and record 'Cleo' as winner", func(t *testing.T) {
 		game := &GameSpy{}
 
 		in := userSends("8", "Cleo wins")
-		cli := cli2.NewCLI(in, dummyStdOut, game)
+		cli := poker.NewCLI(in, dummyStdOut, game)
 
 		cli.PlayPoker()
 
@@ -81,17 +81,17 @@ func TestCLI(t *testing.T) {
 		assertFinishCalledWith(t, game, "Cleo")
 	})
 
-	t.Run("it prints an error when a non numeric value is entered and does not start the game", func(t *testing.T) {
+	t.Run("it prints an error when a non numeric value is entered and does not start the playGame", func(t *testing.T) {
 		game := &GameSpy{}
 
 		stdout := &bytes.Buffer{}
 		in := userSends("pies")
 
-		cli := cli2.NewCLI(in, stdout, game)
+		cli := poker.NewCLI(in, stdout, game)
 		cli.PlayPoker()
 
 		assertGameNotStarted(t, game)
-		assertMessagesSentToUser(t, stdout, cli2.PlayerPrompt, cli2.BadPlayerInputErrMsg)
+		assertMessagesSentToUser(t, stdout, poker.PlayerPrompt, poker.BadPlayerInputErrMsg)
 	})
 
 	t.Run("it prints an error when the winner is declared incorrectly", func(t *testing.T) {
@@ -99,12 +99,12 @@ func TestCLI(t *testing.T) {
 		stdout := &bytes.Buffer{}
 
 		in := userSends("8", "Lloyd is a killer")
-		cli := cli2.NewCLI(in, stdout, game)
+		cli := poker.NewCLI(in, stdout, game)
 
 		cli.PlayPoker()
 
 		assertGameNotFinished(t, game)
-		assertMessagesSentToUser(t, stdout, cli2.PlayerPrompt, cli2.BadWinnerInputMsg)
+		assertMessagesSentToUser(t, stdout, poker.PlayerPrompt, poker.BadWinnerInputMsg)
 	})
 }
 func assertScheduledAlert(t *testing.T, got scheduledAlert, want scheduledAlert) {
@@ -143,13 +143,13 @@ func assertFinishCalledWith(t *testing.T, game *GameSpy, winner string) {
 func assertGameNotFinished(t *testing.T, game *GameSpy) {
 	t.Helper()
 	if game.FinishCalled {
-		t.Errorf("game should not have finished")
+		t.Errorf("playGame should not have finished")
 	}
 }
 
 func assertGameNotStarted(t *testing.T, game *GameSpy) {
 	t.Helper()
 	if game.StartCalled {
-		t.Errorf("game should not have started")
+		t.Errorf("playGame should not have started")
 	}
 }

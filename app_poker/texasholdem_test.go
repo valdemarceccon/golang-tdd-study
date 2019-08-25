@@ -1,10 +1,11 @@
-package cli_test
+package poker_test
 
 import (
 	"fmt"
-	"github.com/valdemarceccon/golang-tdd-study/app_poker/cmd/cli"
+	poker "github.com/valdemarceccon/golang-tdd-study/app_poker"
 	"github.com/valdemarceccon/golang-tdd-study/app_poker/player"
 	"github.com/valdemarceccon/golang-tdd-study/app_poker/pokertesting"
+	"io/ioutil"
 	"testing"
 	"time"
 )
@@ -12,11 +13,11 @@ import (
 func TestGame_Start(t *testing.T) {
 	var dummyPlayerStore = &player.StubPlayerStore{}
 
-	t.Run("schedules alerts on game start for 5 players", func(t *testing.T) {
+	t.Run("schedules alerts on playGame start for 5 players", func(t *testing.T) {
 		blindAlerter := &SpyBlindAlerter{}
-		game := cli.NewTexasHoldem(blindAlerter, dummyPlayerStore)
+		game := poker.NewTexasHoldem(blindAlerter, dummyPlayerStore)
 
-		game.Start(5)
+		game.Start(5, ioutil.Discard)
 
 		cases := []scheduledAlert{
 			{scheduledAt: 0 * time.Second, amount: 100},
@@ -34,11 +35,11 @@ func TestGame_Start(t *testing.T) {
 
 		checkSchedulingCases(cases, t, blindAlerter)
 	})
-	t.Run("schedules alerts on game start for 7 players", func(t *testing.T) {
+	t.Run("schedules alerts on playGame start for 7 players", func(t *testing.T) {
 		blindAlerter := &SpyBlindAlerter{}
-		game := cli.NewTexasHoldem(blindAlerter, dummyPlayerStore)
+		game := poker.NewTexasHoldem(blindAlerter, dummyPlayerStore)
 
-		game.Start(7)
+		game.Start(7, ioutil.Discard)
 
 		cases := []scheduledAlert{
 			{scheduledAt: 0 * time.Second, amount: 100},
@@ -54,7 +55,7 @@ func TestGame_Start(t *testing.T) {
 func TestGame_Finish(t *testing.T) {
 	store := &player.StubPlayerStore{}
 	blindAlerter := &SpyBlindAlerter{}
-	game := cli.NewTexasHoldem(blindAlerter, store)
+	game := poker.NewTexasHoldem(blindAlerter, store)
 	winner := "Ruth"
 
 	game.Finish(winner)
