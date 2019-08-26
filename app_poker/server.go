@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/valdemarceccon/golang-tdd-study/app_poker/player"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -88,7 +87,7 @@ func (p *PlayerServer) webSocket(w http.ResponseWriter, r *http.Request) {
 	ws := newPlayerServerWS(w, r)
 	numberOfPlayersMsg := ws.WaitForMsg()
 	numberOfPlayers, _ := strconv.Atoi(numberOfPlayersMsg)
-	p.game.Start(numberOfPlayers, ioutil.Discard)
+	p.game.Start(numberOfPlayers, ws)
 
 	winnerMsg := ws.WaitForMsg()
 	p.game.Finish(winnerMsg)
@@ -96,6 +95,16 @@ func (p *PlayerServer) webSocket(w http.ResponseWriter, r *http.Request) {
 
 type playerServerWS struct {
 	*websocket.Conn
+}
+
+func (w *playerServerWS) Write(p []byte) (n int, err error) {
+	err = w.WriteMessage(1, p)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return len(p), nil
 }
 
 func newPlayerServerWS(w http.ResponseWriter, r *http.Request) *playerServerWS {

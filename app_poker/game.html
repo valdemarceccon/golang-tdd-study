@@ -60,6 +60,7 @@
             };
 
             conn.onmessage = evt => {
+                console.log(evt.data);
                 blindContainer.innerText = evt.data;
             };
 

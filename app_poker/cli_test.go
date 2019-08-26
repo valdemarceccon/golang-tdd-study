@@ -27,13 +27,15 @@ type SpyBlindAlerter struct {
 type GameSpy struct {
 	StartedWith  int
 	FinishedWith string
+	BlindAlert   []byte
 	StartCalled  bool
 	FinishCalled bool
 }
 
-func (g *GameSpy) Start(numberOfPlayers int, alertsDestination io.Writer) {
+func (g *GameSpy) Start(numberOfPlayers int, out io.Writer) {
 	g.StartedWith = numberOfPlayers
 	g.StartCalled = true
+	out.Write(g.BlindAlert)
 }
 
 func (g *GameSpy) Finish(winner string) {
@@ -119,7 +121,11 @@ func assertScheduledAlert(t *testing.T, got scheduledAlert, want scheduledAlert)
 
 func assertGameStartedWith(t *testing.T, game *GameSpy, numberOfPlayersWanted int) {
 	t.Helper()
-	if game.StartedWith != numberOfPlayersWanted {
+	passed := retryUntil(500*time.Millisecond, func() bool {
+		return game.StartedWith == numberOfPlayersWanted
+	})
+
+	if !passed {
 		t.Errorf("wanted Start called with %d but got %d", numberOfPlayersWanted, game.StartedWith)
 	}
 }
@@ -135,9 +141,24 @@ func assertMessagesSentToUser(t *testing.T, stdout *bytes.Buffer, messages ...st
 
 func assertFinishCalledWith(t *testing.T, game *GameSpy, winner string) {
 	t.Helper()
-	if game.FinishedWith != winner {
+
+	passed := retryUntil(500*time.Millisecond, func() bool {
+		return game.FinishedWith == winner
+	})
+
+	if !passed {
 		t.Errorf("expected finish called with %q but got %q", winner, game.FinishedWith)
 	}
+}
+
+func retryUntil(d time.Duration, f func() bool) bool {
+	deadline := time.Now().Add(d)
+	for time.Now().Before(deadline) {
+		if f() {
+			return true
+		}
+	}
+	return false
 }
 
 func assertGameNotFinished(t *testing.T, game *GameSpy) {

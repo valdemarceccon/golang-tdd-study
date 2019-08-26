@@ -3,7 +3,6 @@ package poker
 import (
 	"github.com/valdemarceccon/golang-tdd-study/app_poker/player"
 	"io"
-	"os"
 	"time"
 )
 
@@ -26,7 +25,7 @@ func (p *TexasHoldem) Start(numberOfPlayers int, to io.Writer) {
 	blindTime := 0 * time.Second
 
 	for _, blind := range blinds {
-		p.alerter.ScheduleAlertAt(blindTime, blind, os.Stdout)
+		p.alerter.ScheduleAlertAt(blindTime, blind, to)
 		blindTime = blindTime + blindIncrement
 	}
 }
