@@ -18,10 +18,11 @@ func main() {
 
 	defer closeDB()
 
-	server, err := poker.NewPlayerServer(store)
+	game := poker.NewTexasHoldem(poker.BlindAlerterFunc(poker.Alerter), store)
+	server, err := poker.NewPlayerServer(store, game)
 
 	if err != nil {
-		log.Fatalf("could not create player server")
+		log.Fatalf("could not create player server %v", err)
 	}
 
 	if err := http.ListenAndServe(":5000", server); err != nil {

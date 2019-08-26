@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/valdemarceccon/golang-tdd-study/app_poker/player"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 	template2 "text/template"
@@ -51,7 +52,7 @@ func NewPlayerServer(store player.PlayerStore, game Game) (p *PlayerServer, err 
 	router := http.NewServeMux()
 	router.Handle("/league", http.HandlerFunc(p.leagueHandler))
 	router.Handle("/players/", http.HandlerFunc(p.playersHandler))
-	router.Handle("/playGame", http.HandlerFunc(p.playGame))
+	router.Handle("/game", http.HandlerFunc(p.playGame))
 	router.Handle("/ws", http.HandlerFunc(p.webSocket))
 
 	p.Handler = router
@@ -84,12 +85,35 @@ var upgrader = websocket.Upgrader{
 }
 
 func (p *PlayerServer) webSocket(w http.ResponseWriter, r *http.Request) {
-	conn, _ := upgrader.Upgrade(w, r, nil)
-
-	_, numberOfPlayersMsg, _ := conn.ReadMessage()
-	numberOfPlayers, _ := strconv.Atoi(string(numberOfPlayersMsg))
+	ws := newPlayerServerWS(w, r)
+	numberOfPlayersMsg := ws.WaitForMsg()
+	numberOfPlayers, _ := strconv.Atoi(numberOfPlayersMsg)
 	p.game.Start(numberOfPlayers, ioutil.Discard)
 
-	_, winnerMsg, _ := conn.ReadMessage()
-	p.game.Finish(string(winnerMsg))
+	winnerMsg := ws.WaitForMsg()
+	p.game.Finish(winnerMsg)
+}
+
+type playerServerWS struct {
+	*websocket.Conn
+}
+
+func newPlayerServerWS(w http.ResponseWriter, r *http.Request) *playerServerWS {
+	conn, err := upgrader.Upgrade(w, r, nil)
+
+	if err != nil {
+		log.Printf("problem upgrading connection to WebSockets %v\n", err)
+	}
+
+	return &playerServerWS{conn}
+}
+
+func (w *playerServerWS) WaitForMsg() string {
+	_, msg, err := w.ReadMessage()
+
+	if err != nil {
+		log.Printf("error reading from websocket %v\n", err)
+	}
+
+	return string(msg)
 }

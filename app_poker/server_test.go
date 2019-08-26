@@ -148,23 +148,6 @@ func TestGame(t *testing.T) {
 		assertStatus(t, response, http.StatusOK)
 	})
 
-	t.Run("when we get a message over a websocket it is a winner of a playGame", func(t *testing.T) {
-		store := &player.StubPlayerStore{}
-		winner := "Ruth"
-		server := httptest.NewServer(mustMakePlayerServer(t, store, dummyGame))
-		defer server.Close()
-
-		wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/ws"
-
-		ws, cleanUp := mustDialWS(t, wsURL)
-		defer cleanUp()
-
-		writeWSMessage(t, ws, winner)
-
-		time.Sleep(10 * time.Millisecond)
-		pokertesting.AssertPlayerWin(t, store, winner)
-	})
-
 	t.Run("start a playGame with 3 players and declare Ruth the winner", func(t *testing.T) {
 		game := &GameSpy{}
 		winner := "Ruth"
@@ -184,7 +167,7 @@ func TestGame(t *testing.T) {
 }
 
 func newGameRequest() *http.Request {
-	request, _ := http.NewRequest(http.MethodGet, "/playGame", nil)
+	request, _ := http.NewRequest(http.MethodGet, "/game", nil)
 	return request
 }
 
